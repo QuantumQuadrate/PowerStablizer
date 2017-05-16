@@ -1,0 +1,10 @@
+This library can help make the raspberry pi controller communicate to the rotating mount.
+The following functions might be useful：
+
+setup():Initialize the serial port. Successfull intilization returns 0.
+home():Home the motor.
+getpos():Get the current position of the motor.
+moveabs(x):Make the motor rotate to an absolute position x(0-360).
+moverel(x):Make the motor rotate by a relative angle x(-360-360).
+
+Additional functions can be developed to set the motor's velocity, acceleration, etc. For now these basic operations are enough to test the functionality of the system.
