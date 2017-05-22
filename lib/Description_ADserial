@@ -1,0 +1,10 @@
+Currently in our project we are using an Arduino to do the ADC. This library can help RPi interact with the AD serial port.
+
+serial baudrate=9600
+serial portname='/dev/ttyACM0'
+
+flush():flush the input stack.
+rd(): read data from serial port
+seropen(): open the serial port
+serclose(): close the serial port
+datastoi(x): convert the result from rd() to a interger.
