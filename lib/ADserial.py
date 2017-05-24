@@ -7,8 +7,29 @@ ADportstr='/dev/ttyACM0'
 
 ser=serial.Serial()
 ser.baudrate=9600
-ser.port=ADportstr
-ser.open()
+
+def setup():
+     serportprefix='/dev/ttyACM'
+     serportnum=0;
+
+     while(serportnum<10):
+          strnum=str(serportnum)
+          serport=serportprefix+strnum
+          ser.port=serport
+          flag=0
+          try:
+               x=ser.open()
+               flag=1
+          except:
+               flag=0
+          if flag==1:
+               return 0
+               break
+          serportnum=serportnum+1
+     return 1
+
+setup()
+
 print("Serial information:",ser)
 
 
