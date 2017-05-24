@@ -1,0 +1,41 @@
+#A small program to identify input pulses
+import RPi.GPIO as GPIO
+
+import time
+
+
+GPIO.setmode(GPIO.BOARD)
+
+chan=3
+
+GPIO.setup(chan,GPIO.IN)
+
+t1=0
+t11=0
+t2=0
+listp=[]
+listw=[]
+
+def my_callback(channel):
+    if(GPIO.input(3)):
+        global t1
+        global t11
+        global listp
+        t1=time.time()
+        listp.append(t1-t11)
+        t11=t1
+    else:
+        global t2
+        global listw
+        t2=time.time()
+        listw.append((t2-t1)*1000)
+t11=time.time()
+
+GPIO.add_event_detect(3,GPIO.BOTH,callback=my_callback)
+
+time.sleep(2)
+
+GPIO.cleanup()
+print('END')
+print(listp)
+print(listw)
