@@ -6,11 +6,12 @@ import ADserial as ADser
 
 import math
 import time
+import matplotlib.pyplot as plt
 
-target=100
+target=200
 
 KI=0
-KP=0.1
+KP=0.065
 
 rt.setup()
 
@@ -26,14 +27,14 @@ list_I=[]
 list_t=[]
 t=0
 I=0
-#plt.ion()
+plt.ion()
 
 crnttime=time.time()
 prvstime=time.time()
 dt=0
 
 
-#plt.ion()
+plt.ion()
 while loopctrl==1:        
         ADser.flush()
         data=ADser.rd()
@@ -48,9 +49,9 @@ while loopctrl==1:
         prvstime=crnttime
         t=t+dt
         list_t.append(t)
-        #plt.plot(list_t,list_I,'b-',linewidth=1.0)
-        #plt.show()
-        #plt.pause(0.1)
+        plt.plot(list_t,list_I,'b-',linewidth=1.0)
+        plt.show()
+        plt.pause(0.1)
         
         error=datanum-target
         integral=integral+error*dt
