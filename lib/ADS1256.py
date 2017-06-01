@@ -1,5 +1,10 @@
+#a library to use the high precision AD/DA shield from waveshare to read the analog input.
+#work borrowed from: https://github.com/jrosenstein/PyADS1256/blob/master/pyads1256.py
+
 
 import sys
+
+
 
 import time
 import wiringpi as wp
