@@ -62,9 +62,6 @@ error=0
 integral=0
 output=0
 
-#fp0=open('p00_0615.txt','w+')
-#fp1=open('p01_0615.txt','w+')
-#ft=open('t0_0615.txt','w+')
 timebase=time.time()
 tprvs=time.time()
 calcount=0
@@ -91,8 +88,6 @@ while mainloopflag==1:
         while (time.time()-t1)<tIntegral:
                              
                 data0=ad.ReadADC()
-                #sys.stdout.write("AIN_0 value: {:d}\n".format(val))
-                #sys.stdout.flush()
                 data0list.append(float(data0)/float(10000))         
 
 #        print(data0list)
@@ -105,21 +100,6 @@ while mainloopflag==1:
 		continue
 	print("List of all measurements",data0list)                                            
         data0ave=float(sum(data0list))/float(lend0)
-       # data0ave=float(ad.ReadADC())/float(10000)
-
-        #ad.SetInputMux(ad.MUX_AIN2,ad.MUX_AIN3)
-        #time.sleep(0.001)
-        #t1=time.time()       
-        #while (time.time()-t1)<0.001:
-                             
-                #data1=ad.ReadADC()
-                #sys.stdout.write("AIN_1 value: {:d}\n".format(val))
-                #sys.stdout.flush()
-                #data1list.append(float(data1)/float(10000))         
-
-        #lend1=len(data1list)                        
-                    
-        #data1ave=float(sum(data1list))/float(lend1)
 
         error=data0ave-target
         if fullflag==0:
@@ -133,22 +113,8 @@ while mainloopflag==1:
                         Intcount=Intcount-1
                 Integrallist[0]=error
         integral=float(sum(Integrallist))/float(len(Integrallist))
-
-        #print(error)
-        #rint(Integrallist)
-        #integral=error*(t1+0.001-tprvs)+integral
-
-        #tprvs=time.time()
         
         output=error*KP+integral*KI
-        #output=error*KP
-        #print('AIN_0:',data0ave)
-        #print('AIN_1:',data1ave)
-
-        #fp0.write('%f\n' % (data0ave))
-        #fp1.write('%f\n' % (data1ave))
-        #ft.write('%f\n' % (time.time()-timebase))
-        
         totangle=totangle+output
         if output<0:
 #                print('number of measurements received:',lend0)    
@@ -174,8 +140,5 @@ while mainloopflag==1:
 
 
 GPIO.cleanup()
-#ft.close()
-#fp0.close()
-#fp1.close()
-#-----------------------------------------------------------------
+
                 

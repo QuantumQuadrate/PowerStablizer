@@ -1,0 +1,4 @@
+Rotator: library that enables RPi to control the rotation stages.
+Shield: library that enables RPi to interact with the AD shield.
+
+s1.1 is the most stable version so far.

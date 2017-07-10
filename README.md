@@ -1,6 +1,6 @@
 # PowerStablizer
 This is a laser power stablizer designed with a rotation mount.
 
-2.21: Final version of the system with Arduino-assisted ADC.
+project0:programs that used to test the performance of the system, including stability measurements and the program that is currently working in RPi_0 on one of the MOT beams of AQuA.Code 's1.1' is the newest stable version. 
 
-3.0: ADC is achieved by using the High-precision AD shield for RPi. Program needs to be executed with root priority.
+project1:programs designed to let one RPi interact with multiple(ideally 4) rotation stages.Libraries are edited and more of them are added. See the description file in the folder for details.

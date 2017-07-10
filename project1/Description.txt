@@ -1,0 +1,5 @@
+Devicesetup: Given the serial number of a K10CR1 rotator, this libray will search for the device in all the ports and set it up as a serial port.
+Rotator: library that enables RPi to control the rotation stages. Some changes have been made compared to the older version.
+Shield: library that enables RPi to interact with the AD shield.
+
+There are currently two versions of the main program: s2.0 and s3.0. Both of them haven't been tested yet.
