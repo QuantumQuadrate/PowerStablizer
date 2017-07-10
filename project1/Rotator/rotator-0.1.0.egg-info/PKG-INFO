@@ -1,0 +1,14 @@
+Metadata-Version: 1.1
+Name: rotator
+Version: 0.1.0
+Summary: Piped log rotation utility
+Home-page: http://github.com/dlecocq/rotator
+Author: Dan Lecocq
+Author-email: dan@moz.com
+License: UNKNOWN
+Description: UNKNOWN
+Platform: UNKNOWN
+Classifier: Programming Language :: Python
+Classifier: Intended Audience :: Developers
+Classifier: Operating System :: OS Independent
+Classifier: Topic :: Internet :: WWW/HTTP
