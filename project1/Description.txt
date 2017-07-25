@@ -2,4 +2,50 @@ Devicesetup: Given the serial number of a K10CR1 rotator, this libray will searc
 Rotator: library that enables RPi to control the rotation stages. Some changes have been made compared to the older version.
 Shield: library that enables RPi to interact with the AD shield.
 
-There are currently two versions of the main program: s2.0 and s3.0. Both of them haven't been tested yet.
+----------------------------------------------------------------------------------------
+
+Version log for main programs:
+
+Latest stable version: s3.0.py, s4.0.py
+
+Note: all the programs will be stored in the /home/pi/project1 folder in each of the Raspberry Pis.
+
+Use command
+
+$ cd /home/pi/project1
+
+to enter the folder. Then enter
+
+$ sudo python name.py
+
+to execute the stabilization program.
+
+One can use
+
+$ nano name.py
+
+to make quick changes to the files.
+
+--------------------------------------------------------------------------------------
+
+S4.1.py:
+
+(Still being tested)The CsPy-compatible version of s3.1.
+
+S4.0.py:
+
+The CsPy-compatible version of s3.0.
+
+S3.1.py:
+
+(Still being tested)Solved the issue that, when the input voltage is too low for the rotator to reach the setpoint, the rotator would keep rotating endlessly. In this version, if the input voltage is low, the rotator would rotate back to a previous input-maximized position.
+
+Also fixed some bugs in the PID part of the program.
+
+The output will now identify which RPI itself is.
+
+Not CsPy compatible.
+
+S3.0.py:
+
+First version. Needs to be executed stand-alone via putty.
