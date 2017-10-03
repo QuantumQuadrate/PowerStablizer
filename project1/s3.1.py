@@ -31,29 +31,16 @@ tintegral=[0.005,0.004,0.01,0.01]
 integralwindow=[10,10,10,10]
 enablebuffer=0
 
-#(bool)enable:1 for using,0 for not using the channel
-#(string)SN:Serial number for the rotator connected to the channel, if in use
-#(int)target:Stablization target for the laser in the channel, if in use
-#(float)KP:feedback parameter, if in use
-#(float)KI:feedback parameter, if in use
-#(int)triglist:Channels for trigger signals
-#(float)delaytime:Set the time delay after trigger before measurement
-#(tintegral):Set the time duration for measurements. Multiple measurements will be
-#            done and the average will be used for feedback
-#(bool)readonly:1 for only reading out the signal,0 for running stablization
-#(int)integralwindow:Set the length of the integral window in feedback calculation
-#(bool):1 for enabling the input buffer(increase input inpedance),0 for disable
+mode=[1,1,1,1]
+modechange=[1,1,1,1]
 
 #-------------------------------------------------------------------------------
 #Default parameters:
 
-#(int)trigin:the port on the box that is used for trigger input
-#(int)datain:the port on the box that is used for data input
 
 datain_high=[0x0,0x2,0x4,0x6]
 datain_low=[0x1,0x3,0x5,0x7]
 trigmenu=[3,5,7,8]
-mode=[1,1,1,1]
 
 #------------------------------------------------------------------------------
 #Dependent variables and pre-loop setup:
@@ -206,7 +193,8 @@ while mainloopflag==1:
                      print('Channel '+str(x[i].xid+1)+": Request unattainable: input power too low.")
                      if readonly==0:
                              odata[x[i].xid]=data0ave-0.1
-                     mode[x[i].xid]=0
+                     if modechange[x[i].xid]==1:
+                             mode[x[i].xid]=0
 
             elif mode[x[i].xid]==0:
                  print('Channel '+str(x[i].xid+1)+': Original request unreachable. Moving to maximum power')
@@ -222,7 +210,7 @@ while mainloopflag==1:
                      print('Moving with angle: '+str(eout))
                      x[i].m.moverel(eout)
                      odata[x[i].xid]=ndata[x[i].xid]
-                 if ndata[x[i].xid]>target[x[i].xid]:
+                 if (ndata[x[i].xid]>target[x[i].xid])&(modechange[x[i].xid]==1):
                      print('back to normal mode')
                      mode[x[i].xid]=1
             calcount=calcount+1
