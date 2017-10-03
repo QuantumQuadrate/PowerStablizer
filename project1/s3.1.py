@@ -16,17 +16,17 @@ import serial
 #User-set parameters:
 
 rpinum=0
-showalldata=1
+showalldata=0
 enable=[1,1,0,0]
 SN=['55000491','55000617','55000392','55000389']
 
-target=[0.55,0.05,0.266,0.0173]
-KP=[50,50,50,50]
-KI=[2,2,0,0]
+target=[0.50,0.045,0.266,0.0173]
+KP=[40,40,50,50]
+KI=[1,1,0,0]
 triglist=[0,1,0,0]
-delaytime=[0.001,.001,0,0]
+delaytime=[0,0,0,0]
 readonly=0
-tintegral=[0.003,0.003,0.01,0.01]
+tintegral=[0.005,0.004,0.01,0.01]
 
 integralwindow=[10,10,10,10]
 enablebuffer=0
@@ -156,8 +156,9 @@ while mainloopflag==1:
                     print("No measurements done within time limit")
                     continue
             datalist=data0list[1:]
+            lend0=lend0-1
             if showalldata==1:
-                    print('List of all measurements in channel'+str(x[i].xid+1)+': ',data0list)
+                    print('List of all measurements in channel'+str(x[i].xid)+': ',data0list)
             print('---------------------------------------------------')
             data0ave=float(sum(data0list))/float(lend0)
             data.append(data0ave)
