@@ -6,7 +6,7 @@ import rotator as rt
 import ADS1256 as ads
 import deviceinfo as di
 import time
-
+import numpy
 
 #System configuration parameters:
 #-------------------------------------------------------------------------------

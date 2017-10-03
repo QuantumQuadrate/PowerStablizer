@@ -16,18 +16,21 @@ import serial
 #User-set parameters:
 
 rpinum=0
-showalldata=0
-enable=[1,1,1,1]
-SN=['55000615','55000616','55000392','55000389']
-target=[2.23,0.0998,0.266,0.0173]
-KP=[10,40,50,50]
-KI=[0,0,0,0]
-triglist=[0,0,0,0]
-delaytime=[0,0,0,0]
+showalldata=1
+enable=[1,1,0,0]
+SN=['55000491','55000617','55000392','55000389']
+
+target=[0.55,0.05,0.266,0.0173]
+KP=[50,50,50,50]
+KI=[2,2,0,0]
+triglist=[0,1,0,0]
+delaytime=[0.001,.001,0,0]
 readonly=0
-tintegral=[0.01,0.01,0.01,0.01]
+tintegral=[0.003,0.003,0.01,0.01]
+
 integralwindow=[10,10,10,10]
 enablebuffer=0
+
 #(bool)enable:1 for using,0 for not using the channel
 #(string)SN:Serial number for the rotator connected to the channel, if in use
 #(int)target:Stablization target for the laser in the channel, if in use
@@ -50,8 +53,6 @@ enablebuffer=0
 datain_high=[0x0,0x2,0x4,0x6]
 datain_low=[0x1,0x3,0x5,0x7]
 trigmenu=[3,5,7,8]
-maxdata=[0,0,0,0]
-acangle=[0,0,0,0]
 mode=[1,1,1,1]
 
 #------------------------------------------------------------------------------
@@ -115,13 +116,13 @@ output=0
 
 calcount=0
 fullflag=[0,0,0,0]
-acflag=[0,0,0,0]
-
+odata=[0,0,0,0]
+ndata=[0,0,0,0]
+esign=[1,1,1,1]
 ad.SetEnableBuffer(enablebuffer)
 ad.SelfCalibrate()
 while mainloopflag==1:
     calcount=0
-    integrallist=[]
     for j in range(4):
         data=[]
         if trig[j].lent>0:
@@ -155,10 +156,9 @@ while mainloopflag==1:
                     print("No measurements done within time limit")
                     continue
             datalist=data0list[1:]
-            lend0=lend0-1
             if showalldata==1:
-                    print('List of all measurements in channel'+str(x[i].xid)+': ',data0list)
-            print('----------This is RPi'+str(rpinum)+'------------------------')
+                    print('List of all measurements in channel'+str(x[i].xid+1)+': ',data0list)
+            print('---------------------------------------------------')
             data0ave=float(sum(data0list))/float(lend0)
             data.append(data0ave)
             
@@ -181,17 +181,10 @@ while mainloopflag==1:
                             intcount=intcount+1
                     x[i].integrallist[integralwindow[x[i].xid]-1]=error
             integral=float(sum(x[i].integrallist))/float(len(x[i].integrallist))
+            #-----------------------------------------------------------------
+            #print(x[i].integrallist)
+            #-----------------------------------------------------------------
             output=error*KP[x[i].xid]+integral*KI[x[i].xid]
-
-            totangle[x[i].xid]=totangle[x[i].xid]+output
-
-            acangle[x[i].xid]=acangle[x[i].xid]+output
-            if maxdata[x[i].xid]<data0ave:
-                    maxdata[x[i].xid]=data0ave
-                    if acflag[x[i].xid]==1:
-                            acangle[x[i].xid]=output
-                    else:
-                            acangle[x[i].xid]=0
 
             if mode[x[i].xid]==1:
                 if output<0:
@@ -199,29 +192,38 @@ while mainloopflag==1:
                      print('Voltage:'+str(data0ave)+"; Moving:-; Angle="+str(output))
                      if readonly==0:
                              x[i].m.moverel(output)
+                             totangle[x[i].xid]=totangle[x[i].xid]+output
 
                 elif output>0:
                      print('Channel '+str(x[i].xid+1)+': number of measurements received:'+str(lend0))    
                      print('Voltage:'+str(data0ave)+"; Moving:+; Angle="+str(output))
                      if readonly==0:
                              x[i].m.moverel(output)
+                             totangle[x[i].xid]=totangle[x[i].xid]+output
             
                 if totangle[x[i].xid]> 180 or totangle[x[i].xid]<-180:
                      print('Channel '+str(x[i].xid+1)+": Request unattainable: input power too low.")
+                     if readonly==0:
+                             odata[x[i].xid]=data0ave-0.1
                      mode[x[i].xid]=0
 
             elif mode[x[i].xid]==0:
-                print('Channel '+str(x[i].xid+1)+': Original request unreachable. Moving to maximum')
-                if readonly==0:
-		     if acflag[x[i].xid]==0:
-                              x[i].m.moverel(-1*acangle[x[i].xid])
-                              acflag[x[i].xid]=1
-                     acangle[x[i].xid]=0
-                if maxdata[x[i].xid]>target[x[i].xid]:
-                     print('Channel '+str(x[i].xid+1)+': Input power increased. Returning to normal mode')
+                 print('Channel '+str(x[i].xid+1)+': Original request unreachable. Moving to maximum power')
+                 if readonly==0:
+                     ndata[x[i].xid]=data0ave
+                     e=ndata[x[i].xid]-odata[x[i].xid]
+                     if e <0:
+                         esign[x[i].xid]=esign[x[i].xid]*-1
+                     eout=esign[x[i].xid]*abs(KP[x[i].xid]*e)
+                     if eout < 1:
+                         eout =eout*5
+                     print('Channel '+str(x[i].xid+1)+': Voltage= '+str(data0ave))
+                     print('Moving with angle: '+str(eout))
+                     x[i].m.moverel(eout)
+                     odata[x[i].xid]=ndata[x[i].xid]
+                 if ndata[x[i].xid]>target[x[i].xid]:
+                     print('back to normal mode')
                      mode[x[i].xid]=1
-                     totangle[x[i].xid]=0
-		     acflag[x[i].xid]=0
             calcount=calcount+1
             if calcount >=1000:
                      calcount=0
@@ -231,7 +233,7 @@ while mainloopflag==1:
             
             i=trig[j].xlist[k]
 
-            if (mode[x[i].xid]==1)&(readonly==0):
+            if (readonly==0):
                     x[i].m.rd(20)
 
 GPIO.cleanup()
