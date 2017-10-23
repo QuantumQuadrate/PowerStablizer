@@ -9,24 +9,24 @@ import RPi.GPIO as GPIO
 import math
 import time
 import serial
-
-
+import numpy as np
+import os
 #System configuration parameters:
 #-------------------------------------------------------------------------------
 #User-set parameters:
 
 rpinum=0
 showalldata=0
-enable=[1,1,0,0]
+enable=[1,0,0,0]
 SN=['55000491','55000617','55000392','55000389']
 
-target=[0.50,0.045,0.266,0.0173]
-KP=[40,40,50,50]
+target=[0.53,0.31,0.266,0.0173]
+KP=[70,10,50,50]
 KI=[1,1,0,0]
-triglist=[0,1,0,0]
+triglist=[3,1,0,0]
 delaytime=[0,0,0,0]
 readonly=0
-tintegral=[0.005,0.004,0.01,0.01]
+tintegral=[0.003,0.004,0.01,0.01]
 
 integralwindow=[10,10,10,10]
 enablebuffer=0
@@ -106,8 +106,10 @@ fullflag=[0,0,0,0]
 odata=[0,0,0,0]
 ndata=[0,0,0,0]
 esign=[1,1,1,1]
+error_array=[0,0,0,0]
 ad.SetEnableBuffer(enablebuffer)
 ad.SelfCalibrate()
+data_to_save=[]
 while mainloopflag==1:
     calcount=0
     for j in range(4):
@@ -173,6 +175,14 @@ while mainloopflag==1:
             #print(x[i].integrallist)
             #-----------------------------------------------------------------
             output=error*KP[x[i].xid]+integral*KI[x[i].xid]
+            if data0ave/target[x[i].xid] > 1.05 or data0ave/target[x[i].xid] < 0.95:
+                error_array[x[i].xid]=1
+            else:
+                error_array[x[i].xid]=0
+            if np.sum(error_array) > 0:
+                os.system('echo 1 > /sys/class/gpio/gpio15/value')
+            else:
+                os.system('echo 0 > /sys/class/gpio/gpio15/value')
 
             if mode[x[i].xid]==1:
                 if output<0:
@@ -224,5 +234,6 @@ while mainloopflag==1:
 
             if (readonly==0):
                     x[i].m.rd(20)
-
+        data_to_save.append(data0ave)
+        np.savetxt("output_array.csv",data_to_save,delimiter= ',')
 GPIO.cleanup()
