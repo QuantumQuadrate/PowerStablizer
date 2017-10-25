@@ -25,7 +25,7 @@ SN=['55000491','55000617','55000392','55000389']
 target=[0.53,0.0685,0.266,0.0173]
 KP=[70,60,50,50]
 KI=[1,1,0,0]
-triglist=[0,1,0,0]
+triglist=[0,1,2,2]
 delaytime=[0.,0,0,0]
 readonly=1
 tintegral=[0.002,0.002,0.01,0.01]
@@ -124,8 +124,7 @@ def noiseeater_loop(j):
         if trig[j].lent>0:
            while True:
                if (trigger_array[j]==1):
-                   print datetime.now()
-                   print "thread has detected change in trigger_array" 
+                   print "thread " + str(j+1) + " has detected change in trigger_array: " + str(datetime.now())
                    break 
            #GPIO.wait_for_edge(trig[j].trigpin,GPIO.RISING)
 	   # if GPIO.event_detected(trig[j].trigpin):
@@ -133,9 +132,6 @@ def noiseeater_loop(j):
           # time.sleep(1)
         else:
             continue
-        
-
-        print "thread is running"
         for k in range(trig[j].lent):
             
             i=trig[j].xlist[k]
@@ -164,7 +160,7 @@ def noiseeater_loop(j):
             #lend0=lend0-1
             if showalldata==1:
                     print('List of all measurements in channel '+str(x[i].xid+1)+': ',data0list)
-            print('---------------------------------------------------')
+            print("-------------------------   " + str(datetime.now()) + "  --------------------------")
             #print str(lend0) + " lendo for " + str(j+1)
             data0ave=float(sum(data0list))/float(lend0)
             data.append(data0ave)
@@ -254,6 +250,7 @@ def noiseeater_loop(j):
        # data_to_save.append(data0ave)
        # np.savetxt("output_array.csv",data_to_save,delimiter= ',')
         trigger_array[j] = 0
+        print "thread has finished" + str(datetime.now())
 for j in range(4):
     GPIO.add_event_detect(trig[j].trigpin, GPIO.RISING)
     if enable[j] == 1:
@@ -266,14 +263,18 @@ for thread in thread_list:
 while True:
     if GPIO.event_detected(trig[0].trigpin):
         trigger_array[0] = 1
-        print "rising edge " + str(datetime.now())
-        print "rising edge"
+        print "rising edge for channel " + str(1) + "  " + str(datetime.now())
+       # print "rising edge"
         #print "trig 0 event"
     if GPIO.event_detected(trig[1].trigpin):
         trigger_array[1] = 1
+        print "rising edge for channel " + str(2) + "  " + str(datetime.now())
     if GPIO.event_detected(trig[2].trigpin):
         trigger_array[2] = 1
+        print "rising edge for channel " + str(3) + "  " + str(datetime.now())
     if GPIO.event_detected(trig[3].trigpin):
         trigger_array[3] = 1
-    #print trigger_array
+        print "rising edge for channel " + str(4) + "  " + str(datetime.now())
+
+   #print trigger_array
 GPIO.cleanup()
