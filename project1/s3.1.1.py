@@ -11,22 +11,24 @@ import time
 import serial
 import numpy as np
 import os
+import threading
+from datetime import datetime
 #System configuration parameters:
 #-------------------------------------------------------------------------------
 #User-set parameters:
 
 rpinum=0
 showalldata=1
-enable=[1,1,0,0]
+enable=[1,0,0,0]
 SN=['55000491','55000617','55000392','55000389']
 
 target=[0.53,0.0685,0.266,0.0173]
 KP=[70,60,50,50]
 KI=[1,1,0,0]
 triglist=[0,1,0,0]
-delaytime=[0.0001,0.0001,0,0]
+delaytime=[0.,0,0,0]
 readonly=1
-tintegral=[0.003,0.003,0.01,0.01]
+tintegral=[0.002,0.002,0.01,0.01]
 
 integralwindow=[10,10,10,10]
 enablebuffer=0
@@ -110,18 +112,31 @@ error_array=[0,0,0,0]
 ad.SetEnableBuffer(enablebuffer)
 ad.SelfCalibrate()
 data_to_save=[]
-while mainloopflag==1:
-    calcount=0
-    for j in range(4):
+trigger_array = [0,0,0,0]
+thread_list = []
+
+def noiseeater_loop(j):
+    while mainloopflag==1:
+        #print "loop " + str(j+1) + " restarting"
+        calcount=0
         data=[]
+         
         if trig[j].lent>0:
-            GPIO.wait_for_edge(trig[j].trigpin,GPIO.RISING)\
-	   # time.sleep(1)
+           while True:
+               if (trigger_array[j]==1):
+                   print datetime.now()
+                   print "thread has detected change in trigger_array" 
+                   break 
+           #GPIO.wait_for_edge(trig[j].trigpin,GPIO.RISING)
+	   # if GPIO.event_detected(trig[j].trigpin):
+               # continue 
+          # time.sleep(1)
         else:
             continue
+        
 
+        print "thread is running"
         for k in range(trig[j].lent):
-            print k
             
             i=trig[j].xlist[k]
             
@@ -150,9 +165,10 @@ while mainloopflag==1:
             if showalldata==1:
                     print('List of all measurements in channel '+str(x[i].xid+1)+': ',data0list)
             print('---------------------------------------------------')
+            #print str(lend0) + " lendo for " + str(j+1)
             data0ave=float(sum(data0list))/float(lend0)
             data.append(data0ave)
-            
+    
         for k in range(trig[j].lent):
             
             i=trig[j].xlist[k]
@@ -237,4 +253,27 @@ while mainloopflag==1:
                     x[i].m.rd(20)
        # data_to_save.append(data0ave)
        # np.savetxt("output_array.csv",data_to_save,delimiter= ',')
+        trigger_array[j] = 0
+for j in range(4):
+    GPIO.add_event_detect(trig[j].trigpin, GPIO.RISING)
+    if enable[j] == 1:
+        print "Making thread " + str(j+1)
+        t = threading.Thread(target=noiseeater_loop, args=(j,))
+        thread_list.append(t)
+for thread in thread_list:
+    thread.daemon = True
+    thread.start()
+while True:
+    if GPIO.event_detected(trig[0].trigpin):
+        trigger_array[0] = 1
+        print "rising edge " + str(datetime.now())
+        print "rising edge"
+        #print "trig 0 event"
+    if GPIO.event_detected(trig[1].trigpin):
+        trigger_array[1] = 1
+    if GPIO.event_detected(trig[2].trigpin):
+        trigger_array[2] = 1
+    if GPIO.event_detected(trig[3].trigpin):
+        trigger_array[3] = 1
+    #print trigger_array
 GPIO.cleanup()
