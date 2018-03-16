@@ -11,31 +11,32 @@ import time
 import serial
 import numpy as np
 import os
-import threading
-from datetime import datetime
 #System configuration parameters:
 #-------------------------------------------------------------------------------
 #User-set parameters:
 
 rpinum=0
-showalldata=1
-enable=[1,0,0,0]
-SN=['55000491','55000617','55000392','55000389']
+showalldata=0
+enable=[0,0,1,0]
+SN=['55000740','55000740','55000617','55000389']
 
-target=[0.53,0.0685,0.266,0.0173]
-KP=[70,60,50,50]
-KI=[1,1,0,0]
-triglist=[0,2,2,2]
-delaytime=[0.,0,0,0]
+target=[0.772,0.0685,0.266,0.0173]
+KP=[40,60,40,50]
+KI=[1,1,1,0]
+triglist=[0,1,1,0]
+delaytime=[0.01,0,0,0]
 readonly=1
-tintegral=[0.002,0.002,0.01,0.01]
+tintegral=[0.004,0.003,0.004,0.01]
 
 integralwindow=[10,10,10,10]
 enablebuffer=0
 
 mode=[1,1,1,1]
 modechange=[1,1,1,1]
-
+GPIO.setmode(GPIO.BOARD)
+GPIO.setup(32, GPIO.OUT)
+GPIO.setup(36, GPIO.OUT)
+GPIO.setup(38, GPIO.OUT)
 #-------------------------------------------------------------------------------
 #Default parameters:
 
@@ -112,29 +113,18 @@ error_array=[0,0,0,0]
 ad.SetEnableBuffer(enablebuffer)
 ad.SelfCalibrate()
 data_to_save=[]
-trigger_array = [0,0,0,0]
-thread_list = []
-
-def noiseeater_loop(j):
-    loopcount = 0
-    while mainloopflag==1:
-        loopcount  += 1
-        #print "loop " + str(j+1) + " restarting"
-        calcount=0
+while mainloopflag==1:
+    calcount=0
+    for j in range(4):
         data=[]
-         
         if trig[j].lent>0:
-           while True:
-               if (trigger_array[j]==1):
-                   #print "thread " + str(j+1) + " has detected change in trigger_array: " + str(datetime.now())
-                   break 
-           #GPIO.wait_for_edge(trig[j].trigpin,GPIO.RISING)
-	   # if GPIO.event_detected(trig[j].trigpin):
-               # continue 
-          # time.sleep(1)
+            GPIO.wait_for_edge(trig[j].trigpin,GPIO.RISING)\
+	   # time.sleep(1)
         else:
             continue
+
         for k in range(trig[j].lent):
+            print k
             
             i=trig[j].xlist[k]
             
@@ -145,7 +135,6 @@ def noiseeater_loop(j):
             time.sleep(delaytime[j])
             
             t1=time.time()       
-           # print "Thread " + str(j+1) + " is starting data collection at " + str(datetime.now())
             while (time.time()-t1)<tintegral[j]:
                                  
                     data0=ad.ReadADC()
@@ -163,19 +152,19 @@ def noiseeater_loop(j):
             #lend0=lend0-1
             if showalldata==1:
                     print('List of all measurements in channel '+str(x[i].xid+1)+': ',data0list)
-            #print("---data collection over at " + str(datetime.now()) + "for thread " + str(j+1) + "  ----------------")
-            #print str(lend0) + " lendo for " + str(j+1)
+            print('---------------------------------------------------')
             data0ave=float(sum(data0list))/float(lend0)
             data.append(data0ave)
-    
+            
         for k in range(trig[j].lent):
             
             i=trig[j].xlist[k]
-
-            data0ave=data[k]
-            
-            error=data0ave-target[x[i].xid]
-
+            try:
+                    data0ave=data[k]
+                    error=data0ave-target[x[i].xid]
+            except IndexError:
+                    error = 0
+                    print 'No data collected. Waiting until next trigger to continue'
             if fullflag[x[i].xid]==0:
                     (x[i].integrallist).append(error)
                     if len(x[i].integrallist)>=integralwindow[x[i].xid]:
@@ -192,13 +181,15 @@ def noiseeater_loop(j):
             #-----------------------------------------------------------------
             output=error*KP[x[i].xid]+integral*KI[x[i].xid]
             if data0ave/target[x[i].xid] > 1.05 or data0ave/target[x[i].xid] < 0.95:
-                error_array[x[i].xid]=1
+                GPIO.output(38,1)
             else:
-                error_array[x[i].xid]=0
-            if np.sum(error_array) > 0:
+                GPIO.output(38,0)
+            if GPIO.input(32) + GPIO.input(36) + GPIO.input(38) > 0:
                 os.system('echo 1 > /sys/class/gpio/gpio15/value')
+                print "error signal is outgoing"
             else:
                 os.system('echo 0 > /sys/class/gpio/gpio15/value')
+                print 'error signal is repressed'
 
             if mode[x[i].xid]==1:
                 if output<0:
@@ -251,35 +242,5 @@ def noiseeater_loop(j):
             if (readonly==0):
                     x[i].m.rd(20)
        # data_to_save.append(data0ave)
-       # np.savetxt("output_array.csv",data_to_save,delimiter= ',')
-        trigger_array[j] = 0
-        #print "thread " + str(j+1) + " has finished" + str(datetime.now()) + " for loop " + str(loopcount)
-for j in range(4):
-    GPIO.add_event_detect(trig[j].trigpin, GPIO.RISING)
-    if enable[j] == 1:
-        print "Making thread " + str(j+1)
-        t = threading.Thread(target=noiseeater_loop, args=(j,))
-        thread_list.append(t)
-for thread in thread_list:
-    thread.daemon = True
-    thread.start()
-trigcounter=1
-while True:
-    if GPIO.event_detected(trig[0].trigpin):
-        trigger_array[0] = 1
-        print "rising edge " + str(trigcounter) + " for channel " + str(1) + "  " + str(datetime.now())
-        trigcounter += 1
-       # print "rising edge"
-        #print "trig 0 event"
-    if GPIO.event_detected(trig[1].trigpin):
-        trigger_array[1] = 1
-       # print "rising edge for channel " + str(2) + "  " + str(datetime.now())
-    if GPIO.event_detected(trig[2].trigpin):
-        trigger_array[2] = 1
-        print "rising edge for channel " + str(3) + "  " + str(datetime.now())
-    if GPIO.event_detected(trig[3].trigpin):
-        trigger_array[3] = 1
-        print "rising edge for channel " + str(4) + "  " + str(datetime.now())
-
-   #print trigger_array
+       # np.savetxt("output_array-FORT.csv",data_to_save,delimiter= ',')
 GPIO.cleanup()

@@ -11,28 +11,35 @@ import time
 import serial
 import numpy as np
 import os
+import multiprocessing as mp
+from multiprocessing import Process,Queue,Value,Array
+manager = mp.Manager()
 #System configuration parameters:
 #-------------------------------------------------------------------------------
 #User-set parameters:
 
 rpinum=0
-showalldata=1
-enable=[1,1,0,0]
+showalldata=0
+enable=[1,0,0,0]
 SN=['55000491','55000617','55000392','55000389']
 
-target=[0.53,0.0685,0.266,0.0173]
-KP=[70,60,50,50]
+target=[1.09,0.0685,0.266,0.0173]
+KP=[30,60,0,50]
 KI=[1,1,0,0]
 triglist=[0,1,0,0]
-delaytime=[0.0001,0.0001,0,0]
-readonly=1
-tintegral=[0.003,0.003,0.01,0.01]
+delaytime=[0.01,0,0,0]
+readonly=0
+tintegral=[0.004,0.003,0.01,0.01]
 
 integralwindow=[10,10,10,10]
 enablebuffer=0
 
 mode=[1,1,1,1]
 modechange=[1,1,1,1]
+GPIO.setmode(GPIO.BOARD)
+GPIO.setup(32, GPIO.OUT)
+GPIO.setup(36, GPIO.OUT)
+GPIO.setup(38, GPIO.OUT)
 
 #-------------------------------------------------------------------------------
 #Default parameters:
@@ -92,6 +99,16 @@ for count in range(4):
 lentrig=len(trig)
 
 ad=ads.ADS1256()
+#-----------------------------------------------------------------------------
+#processes in charge of rotation:
+q1 = manager.Queue(1)
+q2 = manager.Queue(1)
+q3 = manager.Queue(1)
+q4 = manager.Queue(1)
+def rotation_process(index):
+    if enable[index] == 1:
+     
+
 #-----------------------------------------------------------------------------
 #main loop:
 mainloopflag=1
@@ -156,11 +173,12 @@ while mainloopflag==1:
         for k in range(trig[j].lent):
             
             i=trig[j].xlist[k]
-
-            data0ave=data[k]
-            
-            error=data0ave-target[x[i].xid]
-
+            try:
+                    data0ave=data[k]
+                    error=data0ave-target[x[i].xid]
+            except IndexError:
+                    error = 0
+                    print 'No data collected. Waiting until next trigger to continue'
             if fullflag[x[i].xid]==0:
                     (x[i].integrallist).append(error)
                     if len(x[i].integrallist)>=integralwindow[x[i].xid]:
@@ -177,21 +195,31 @@ while mainloopflag==1:
             #-----------------------------------------------------------------
             output=error*KP[x[i].xid]+integral*KI[x[i].xid]
             if data0ave/target[x[i].xid] > 1.05 or data0ave/target[x[i].xid] < 0.95:
-                error_array[x[i].xid]=1
+                GPIO.output(36,1)
             else:
-                error_array[x[i].xid]=0
-            if np.sum(error_array) > 0:
+                GPIO.output(36,0)
+           # if GPIO.input(32) + GPIO.input(36) + GPIO.input(38) > 0:
+           #     os.system('echo 1 > /sys/class/gpio/gpio15/value')
+           #     print "error signal is outgoing"
+           # else:
+           #     os.system('echo 0 > /sys/class/gpio/gpio15/value')
+           #     print 'error signal is repressed'
+
+            if GPIO.input(36)  > 0:
                 os.system('echo 1 > /sys/class/gpio/gpio15/value')
+                print "error signal is outgoing"
             else:
                 os.system('echo 0 > /sys/class/gpio/gpio15/value')
-
+                print 'error signal is repressed'
+W
             if mode[x[i].xid]==1:
                 if output<0:
                      print('Channel '+str(x[i].xid+1)+': number of measurements received:'+str(lend0))    
                      print('Voltage:'+str(data0ave)+"; Moving:-; Angle="+str(output))
                      if readonly==0:
                              x[i].m.moverel(output)
-                             totangle[x[i].xid]=totangle[x[i].xid]+output
+                             
+totangle[x[i].xid]=totangle[x[i].xid]+output
 
                 elif output>0:
                      print('Channel '+str(x[i].xid+1)+': number of measurements received:'+str(lend0))    
@@ -236,5 +264,5 @@ while mainloopflag==1:
             if (readonly==0):
                     x[i].m.rd(20)
        # data_to_save.append(data0ave)
-       # np.savetxt("output_array.csv",data_to_save,delimiter= ',')
+       # np.savetxt("output_array-FORT.csv",data_to_save,delimiter= ',')
 GPIO.cleanup()
